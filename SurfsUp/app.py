@@ -127,7 +127,94 @@ def tobs():
 
     return jsonify(temp_data)
 
+@app.route("/api/v1.0/<start>")
+def sd(start):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+    #'USC00519281' was determined as the most popular station from our climate started analysis
+    date_string = start
+    year, month, day = map(int, date_string.split('.'))
+    from datetime import datetime
+    start_date = datetime(year, month, day)
 
+    # Calculate the date one year from the last date in data set.
+    #query_date = dt.date(2017, 8, 18) - dt.timedelta(days=365)
+
+    temp_stats = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+                               filter(Measurement.date >= str(start_date)).\
+                               all()
+    
+    min_temp, avg_temp, max_temp = temp_stats[0]
+
+    temp_dict = {
+                "TMIN": min_temp,
+                "TAVG": avg_temp,
+                "TMAX": max_temp
+                }
+
+    #Query the dates and temperature observations of the most-active station for the previous year of data.
+    #temp_data = session.query(Measurement.date, Measurement.tobs).\
+                #filter(Measurement.date >= query_date).\
+                #filter(Measurement.station == 'USC00519281').\
+                #all()
+
+    session.close()
+
+    # CreatING a dictionary with date as the key and tempearture as the value
+    #temp_dict = {date: tobs for date, tobs in  temp_data}
+
+    # Convert list of tuples into normal list
+    temp_data = list(np.ravel(temp_dict))
+
+    return jsonify(temp_data)
+
+@app.route("/api/v1.0/<start>/<end>")
+def md(start, end):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+    #'USC00519281' was determined as the most popular station from our climate started analysis
+    date_string1 = start
+    date_string2 = end
+    
+    year, month, day = map(int, date_string1.split('.'))
+    from datetime import datetime
+    start_date = datetime(year, month, day)
+
+    year, month, day = map(int, date_string2.split('.'))
+    from datetime import datetime
+    end_date = datetime(year, month, day)
+
+    # Calculate the date one year from the last date in data set.
+    #query_date = dt.date(2017, 8, 18) - dt.timedelta(days=365)
+
+    temp_stats = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+                               filter(Measurement.date <= str(end_date)).\
+                               filter(Measurement.date >= str(start_date)).\
+                               all()
+    
+    min_temp, avg_temp, max_temp = temp_stats[0]
+
+    temp_dict = {
+                "TMIN": min_temp,
+                "TAVG": avg_temp,
+                "TMAX": max_temp
+                }
+
+    #Query the dates and temperature observations of the most-active station for the previous year of data.
+    #temp_data = session.query(Measurement.date, Measurement.tobs).\
+                #filter(Measurement.date >= query_date).\
+                #filter(Measurement.station == 'USC00519281').\
+                #all()
+
+    session.close()
+
+    # CreatING a dictionary with date as the key and tempearture as the value
+    #temp_dict = {date: tobs for date, tobs in  temp_data}
+
+    # Convert list of tuples into normal list
+    temp_data = list(np.ravel(temp_dict))
+
+    return jsonify(temp_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
